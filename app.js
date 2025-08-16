@@ -41,13 +41,64 @@ app.get('/person', async (req, res) => {
     res.status(500).send(`Error fetching data: ${err.message}`);
   }
 });
+app.use(express.json());
+
+app.post('/person', async (req, res) => {
+  const { firstName, lastName, address } = req.body; // Adjust fields based on your Person table
+  
+  try {
+    await sql.connect(config);
+    const result = await sql.query`
+      INSERT INTO Person (firstName, lastName, address)
+      VALUES (${firstName}, ${lastName}, ${address})
+    `;
+    res.send('Person record created successfully!');
+  } catch (err) {
+    console.error('Error creating record:', err);
+    res.status(500).send(`Error creating record: ${err.message}`);
+  }
+});
+
+app.put('/person/:id', async (req, res) => {
+  const { id } = req.params;
+  const { firstName, lastName, address } = req.body;
+
+  try {
+    await sql.connect(config);
+    const result = await sql.query`
+      UPDATE Person
+      SET firstName = ${firstName},
+          lastName = ${lastName},
+          address = ${address}
+      WHERE id = ${id}
+    `;
+    if (result.rowsAffected[0] > 0) {
+      res.send('Person record updated successfully!');
+    } else {
+      res.status(404).send('Person not found.');
+    }
+  } catch (err) {
+    console.error('Error updating record:', err);
+    res.status(500).send(`Error updating record: ${err.message}`);
+  }
+});
 
 // // Your GET route
-// app.get('/hello', (req, res) => {
-//   res.send('Hello, this is a GET request!');
-// });
+app.delete('/person/:id', async (req, res) => {
+  const { id } = req.params;
 
-// // Starting the server
-// app.listen(3000, () => {
-//   console.log('Server is running on port 3000');
-// });
+  try {
+    await sql.connect(config);
+    const result = await sql.query`
+      DELETE FROM Person WHERE id = ${id}
+    `;
+    if (result.rowsAffected[0] > 0) {
+      res.send('Person record deleted successfully!');
+    } else {
+      res.status(404).send('Person not found.');
+    }
+  } catch (err) {
+    console.error('Error deleting record:', err);
+    res.status(500).send(`Error deleting record: ${err.message}`);
+  }
+});
